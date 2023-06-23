@@ -1,6 +1,21 @@
 const express = require('express');
 
+const mongoose = require('mongoose');
+
+const Book = require('./models/Book');
+
+const User = require('./models/User');
+
+const bcrypt = require('bcrypt');
+
+mongoose.connect('mongodb+srv://FirstUser:RxxSHdntRyO3OsgN@cluster0.bker17n.mongodb.net/?retryWrites=true&w=majority',
+    { useNewUrlParser: true,
+    useUnifiedTopology: true })
+  .then(() => console.log('Connexion à MongoDB réussie !'))
+  .catch(() => console.log('Connexion à MongoDB échouée !'));
+
 const app = express();
+
 app.use(express.json());
 
 app.use((req, res, next) => {
@@ -10,32 +25,62 @@ app.use((req, res, next) => {
     next();
 });
 
-app.post('/api/auth/signup', (req, res, next) => {
-    console.log(req.body);
-    res.status(201).json(req.body.message);
+app.get('/', (req, res, next) => {
+    res.status(201).json({"test machine" : "ok"});
+    next();
 });
 
-app.get('/stuff', (req, res, next) => {
-    const stuff = [
-      {
-        _id: 'oeihfzeoi',
-        title: 'Mon premier objet',
-        description: 'Les infos de mon premier objet',
-        imageUrl: 'https://cdn.pixabay.com/photo/2019/06/11/18/56/camera-4267692_1280.jpg',
-        price: 4900,
-        userId: 'qsomihvqios',
-      },
-      {
-        _id: 'oeihfzeomoihi',
-        title: 'Mon deuxième objet',
-        description: 'Les infos de mon deuxième objet',
-        imageUrl: 'https://cdn.pixabay.com/photo/2019/06/11/18/56/camera-4267692_1280.jpg',
-        price: 2900,
-        userId: 'qsomihvqios',
-      },
-    ];
-    res.status(200).json(stuff);
+app.post('/api/books', (req, res, next) => {
+    delete req.body._id;
+    const book = new Book({
+      ...req.body
+    });
+    book.save()
+      .then(() => res.status(201).json({ message: 'Objet enregistré !'}))
+      .catch(error => res.status(400).json({ error }));
+      next();
+});
+
+app.get('/api/books', (req, res, next) => {
+    Book.find()
+      .then(books => res.status(200).json(books))
+      .catch(error => res.status(400).json({ error }));
   });
-  
+
+app.post('/api/auth/signup', (req, res, next) => {
+    bcrypt.hash(req.body.password, 10)
+    .then(hash => {
+      const user = new User({
+        email: req.body.email,
+        password: hash
+      });
+      user.save()
+        .then(() => res.status(201).json({ message: 'Utilisateur créé !' }))
+        .catch(error => res.status(400).json({ error }));
+    })
+    .catch(error => res.status(500).json({ error }));
+});
+
+app.post('/api/auth/login', (req, res, next) => {
+    User.findOne({ email: req.body.email })
+    .then(user => {
+        if (!user) {
+            return res.status(401).json({ message: 'Paire login/mot de passe incorrecte'});
+        }
+        bcrypt.compare(req.body.password, user.password)
+            .then(valid => {
+                if (!valid) {
+                    return res.status(401).json({ message: 'Paire login/mot de passe incorrecte !' });
+                }
+                res.status(200).json({
+                    userId: user._id,
+                    token: 'TOKEN'
+                });
+            })
+            .catch(error => res.status(500).json({ error }));
+    })
+    .catch(error => res.status(500).json({ error }));
+});
+
 
 module.exports = app;
