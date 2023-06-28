@@ -11,6 +11,7 @@ router.get('/books/:id', apiCtrl.getOneBook);
 router.post('/auth/signup', apiCtrl.signup);
 router.post('/auth/login', apiCtrl.login);
 router.delete('/books/:id', auth, apiCtrl.deleteBook);
+router.put('/books/:id', auth, multer, apiCtrl.modifyBook);
 
 
 module.exports = router;
