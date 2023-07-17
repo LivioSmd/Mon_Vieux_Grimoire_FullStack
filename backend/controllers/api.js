@@ -3,6 +3,8 @@ const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
+const Rating = require('../models/Rating');
+
 
 exports.createBook = (req, res, next) => {
     const bookObject = JSON.parse(req.body.book);
@@ -109,4 +111,36 @@ exports.modifyBook = (req, res, next) => {
         .catch((error) => {
             res.status(400).json({ error });
         });
- };
+};
+
+exports.rating = (req, res, next) => {
+    const rating = {
+        userId: req.auth.userId,
+        grade: req.body.rating
+    };
+
+    Book.findOne({ _id: req.params.id })
+        .then(book => {
+            const existingRating = book.ratings.find(rating => rating.userId === req.auth.userId);
+            if (existingRating) {
+                return res.status(400).json({ message: 'Vous avez déjà renseigné une notation pour ce livre' });
+            }
+            book.ratings.push(rating);
+            const totalRating = book.ratings.reduce((sum, rating) => sum + rating.grade, 0);
+            const averageRating = totalRating / book.ratings.length;
+            book.averageRating = averageRating;
+            book.save()
+                .then(() => {
+                    res.status(201).json({ message: 'Note enregistrée !' });
+                })
+                .catch(error => {
+                    res.status(400).json({ error });
+                });
+        })
+        .catch(error => {
+            res.status(500).json({ error });
+        });
+};
+
+
+

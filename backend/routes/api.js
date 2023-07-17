@@ -12,6 +12,7 @@ router.post('/auth/signup', apiCtrl.signup);
 router.post('/auth/login', apiCtrl.login);
 router.delete('/books/:id', auth, apiCtrl.deleteBook);
 router.put('/books/:id', auth, multer, apiCtrl.modifyBook);
+router.post('/books/:id/rating', auth, apiCtrl.rating);
 
 
 module.exports = router;
