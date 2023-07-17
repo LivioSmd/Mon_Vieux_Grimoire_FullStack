@@ -3,7 +3,6 @@ const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
-const Rating = require('../models/Rating');
 
 
 exports.createBook = (req, res, next) => {
@@ -142,5 +141,20 @@ exports.rating = (req, res, next) => {
         });
 };
 
+exports.getBestRating = (req, res, next) => {
+    Book.find()
+      .sort({ averageRating: -1 })
+      .limit(3)
+      .then(books => {
+        res.status(200).json(books);
+      })
+      .catch(error => {
+        res.status(500).json({ error });
+      });
+};
+  
+
+  
+  
 
 
