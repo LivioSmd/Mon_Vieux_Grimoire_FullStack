@@ -3,22 +3,39 @@ const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
+const sharp = require('sharp')
 
 
-exports.createBook = (req, res, next) => {
+exports.createBook = async (req, res, next) => {
     const bookObject = JSON.parse(req.body.book);
     delete bookObject._id;
     delete bookObject._userId;
+  
+    // Optimisation de l'image avec sharp
+    const optimizedImageBuffer = await sharp(req.file.path)
+      .resize(206, 260) // Redimensionnez l'image à la largeur de 800 pixels (ajustez selon vos besoins)
+      .jpeg({ quality: 80 }) // Définissez la qualité JPEG à 80 (ajustez selon vos besoins)
+      .toBuffer();
+  
+    fs.unlinkSync(req.file.path); // Supprimez l'image d'origine non optimisée
+  
+    // Générez un nom de fichier unique pour l'image optimisée
+    const optimizedImageFilename = `${req.file.filename.split('.')[0]}_optimized.jpg`;
+  
+    // Enregistrez l'image optimisée
+    fs.writeFileSync(`images/${optimizedImageFilename}`, optimizedImageBuffer);
+  
     const book = new Book({
-        ...bookObject,
-        userId: req.auth.userId,
-        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+      ...bookObject,
+      userId: req.auth.userId,
+      imageUrl: `${req.protocol}://${req.get('host')}/images/${optimizedImageFilename}`,
     });
   
     book.save()
-    .then(() => { res.status(201).json({message: 'Objet enregistré !'})})
-    .catch(error => { res.status(400).json( { error })})
+      .then(() => { res.status(201).json({ message: 'Objet enregistré !' }) })
+      .catch(error => { res.status(400).json({ error }) });
 };
+  
 
 exports.showAllBook = (req, res, next) => {
     Book.find()

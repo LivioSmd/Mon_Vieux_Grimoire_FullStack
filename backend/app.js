@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const apiRoutes = require('./routes/api');
 const path = require('path');
 
-
 mongoose.connect('mongodb+srv://FirstUser:RxxSHdntRyO3OsgN@cluster0.bker17n.mongodb.net/?retryWrites=true&w=majority',
     { useNewUrlParser: true,
     useUnifiedTopology: true })
